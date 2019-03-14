@@ -1,0 +1,19 @@
+[[source]]
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+name = "pypi"
+
+[packages]
+selenium = "*"
+flask = "*"
+requests = "*"
+beautifulsoup4 = "*"
+appdirs = "*"
+
+[dev-packages]
+mock = "*"
+pytest = "*"
+coverage = "*"
+
+[requires]
+python_version = "3.7"

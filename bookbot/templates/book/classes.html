@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Select a Booking{% endblock %}</h1>
+    <hr>
+{% endblock %}
+
+{% block content %}
+    <h3>
+        <!-- todo generate this rather than repeat! -->
+        {%  for d in range(7) %}
+        <a id={{'day'+d|string}} class=action
+           {{ 'style=color:red' if d == day else '' }}
+           href="{{ url_for('book.list_classes', day=d) }}"
+        >{{ d|get_day_string }}</a><a> | </a>
+        {% endfor %}
+    </h3>
+    <hr>
+    <article class="class">
+        <table>
+            <th>Title</th>
+            <th>Time</th>
+            <th>Instructor</th>
+            <th>Add</th>
+            {% for class in classes %}
+                <tr>
+                    <td>{{ class['title'] }}</td>
+                    <td>{{ class['times'] }}</td>
+                    <td>{{ class['instructor'] }}</td>
+                    <td>
+                        <a class="action"
+                           href="{{ url_for('book.add_to_index',
+                                new_class=class['index']) }}"
+                        >select this class</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </article>
+{% endblock %}

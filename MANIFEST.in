@@ -1,0 +1,6 @@
+include LICENSE
+include bookbot/schema.sql
+graft bookbot/static
+graft bookbot/templates
+graft tests
+global-exclude *.pyc

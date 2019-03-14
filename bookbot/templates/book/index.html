@@ -1,0 +1,50 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Regular Weekly Automatic Bookings{% endblock %}</h1>
+    {% if g.user %}
+        <a class="action" href=
+                "{{ url_for('book.list_classes', day=0) }}">New</a>
+    {% endif %}
+{% endblock %}
+
+{% block content %}
+    {% for booking in bookings %}
+        <article class="regular_bookings">
+            <header>
+                <h1>{{ booking['title'] }}</h1>
+                <table width="100%">
+                    <tr>
+                        <td>
+                            <div>{{ booking['day'] | get_day_string }}
+                                at {{ booking['times'] }}
+                                {{ booking['instructor'] }}
+                            </div>
+                            Auto Booking:
+                            <a {{ 'style=color:green' if booking['enabled']
+                            else 'style=color:red' }}>
+                                {{ 'On' if booking['enabled'] else 'Off' }}
+                            </a>
+                        </td>
+                        <td align="right">
+                            <a class="action"
+                               href="{{ url_for('book.toggle_booking',
+                        class_id=booking['id'],
+                        enabled=not booking['enabled']) }}">
+                                {{ 'Disable' if booking['enabled'] else 'Enable' }}</a>
+                        </td>
+                        <td align="right">
+                            <a
+                                    class="action"
+                                    href="{{ url_for('book.delete', class_id=booking['id']) }}">
+                                Delete</a>
+                        </td>
+                    </tr>
+                </table>
+            </header>
+        </article>
+        {% if not loop.last %}
+            <hr>
+        {% endif %}
+    {% endfor %}
+{% endblock %}
