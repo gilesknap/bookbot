@@ -5,7 +5,8 @@ from flask import (
 )
 from werkzeug.security import check_password_hash, generate_password_hash
 
-from flaskr.db import get_db
+from bookbot.db import get_db
+from bookbot.caversham import site_login
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -80,7 +81,7 @@ def login():
         username = request.form['username']
         password = request.form['password']
         db = get_db()
-        error = None
+
         user = db.execute(
             'SELECT * FROM user WHERE username = ?', (username,)
         ).fetchone()
@@ -89,6 +90,8 @@ def login():
             error = 'Incorrect username.'
         elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
+        else:
+            error = site_login()
 
         if error is None:
             # store the user id in a new session and return to the index

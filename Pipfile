@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 selenium = "*"
 flask = "*"
+requests = "*"
+beautifulsoup4 = "*"
 
 [dev-packages]
 mock = "*"

@@ -1,13 +1,15 @@
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for
+    Blueprint, flash, g, redirect, render_template, request, url_for, Flask
 )
 from werkzeug.exceptions import abort
-
 from .auth import login_required
 from .db import get_db
+import logging
 
+app = Flask(__name__)
 bp = Blueprint('blog', __name__)
 
+app.logger.setLevel(logging.INFO)
 
 @bp.route('/')
 def index():
@@ -49,31 +51,32 @@ def get_post(id, check_author=True):
     return post
 
 
-@bp.route('/create', methods=('GET', 'POST'))
+@bp.route('/classes', methods=('GET',))
 @login_required
-def create():
-    """Create a new post for the current user."""
-    if request.method == 'POST':
-        title = request.form['title']
-        body = request.form['body']
-        error = None
+def classes():
 
-        if not title:
-            error = 'Title is required.'
+    """List all available classes."""
+    # if request.method == 'POST':
+    #     title = request.form['title']
+    #     body = request.form['body']
+    #     error = None
+    #
+    #     if not title:
+    #         error = 'Title is required.'
+    #
+    #     if error is not None:
+    #         flash(error)
+    #     else:
+    #         db = get_db()
+    #         db.execute(
+    #             'INSERT INTO post (title, body, author_id)'
+    #             ' VALUES (?, ?, ?)',
+    #             (title, body, g.user['id'])
+    #         )
+    #         db.commit()
+    #         return redirect(url_for('blog.index'))
 
-        if error is not None:
-            flash(error)
-        else:
-            db = get_db()
-            db.execute(
-                'INSERT INTO post (title, body, author_id)'
-                ' VALUES (?, ?, ?)',
-                (title, body, g.user['id'])
-            )
-            db.commit()
-            return redirect(url_for('blog.index'))
-
-    return render_template('blog/create.html')
+    return render_template('blog/classes.html')
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))

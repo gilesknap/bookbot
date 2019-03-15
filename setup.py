@@ -6,7 +6,7 @@ with io.open('README.rst', 'rt', encoding='utf8') as f:
     readme = f.read()
 
 setup(
-    name='flaskr',
+    name='bookbot',
     version='1.0.0',
     url='http://flask.pocoo.org/docs/tutorial/',
     license='BSD',
