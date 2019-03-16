@@ -1,6 +1,5 @@
 from time import sleep
 import logging
-import sys
 from flask import Flask
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions, ActionChains
@@ -9,7 +8,7 @@ from selenium.common.exceptions import (WebDriverException,
                                         TimeoutException)
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
+from selenium.webdriver.support import expected_conditions as ec
 
 app = Flask(__name__)
 
@@ -22,7 +21,7 @@ driver_wait = None
 def click_element(path):
     result = True
     try:
-        driver_wait.until(EC.presence_of_element_located((By.XPATH, path)))
+        driver_wait.until(ec.presence_of_element_located((By.XPATH, path)))
         element = driver.find_element_by_xpath(path)
         driver_actions = ActionChains(driver)
         driver_actions.move_to_element(element).move_by_offset(
@@ -34,14 +33,13 @@ def click_element(path):
     return result
 
 
-def click(path, check_text, retries: int = 5):
-    check_path = '//*[text()="{0}"]'.format(check_text)
+def click(path, check_path, retries: int = 5):
     repeat = 0
     while repeat < retries:
         if click_element(path):
             try:
                 driver_wait.until(
-                    EC.presence_of_element_located(
+                    ec.presence_of_element_located(
                         (By.XPATH, check_path)))
                 break
             except TimeoutException:
@@ -52,20 +50,19 @@ def click(path, check_text, retries: int = 5):
         raise RuntimeError('Click on {} failed to find {}', path, check_path)
 
 
-def click_button():
-    path = ''
+def find_text(text: str, tag='*') -> str:
+    return '//{1}[text()="{0}"]'.format(text, tag)
 
 
-def click_text(text: str, check_text: str, tag: str = '*', retries: int = 5):
-    path = '//{1}[text()="{0}"]'.format(text, tag)
-    click(path, check_text, retries)
+def find_attribute(attribute: str, value: str):
+    return '//*[@{0}="{1}"]'.format(attribute, value)
 
 
 def site_login():
     global driver
     global driver_wait
     options = ChromeOptions()
-    # options.headless = True
+    options.headless = True
     driver = webdriver.Chrome(CHROME_DRIVER_PATH,
                               options=options)
     driver_wait = WebDriverWait(driver, 2)
@@ -77,24 +74,33 @@ def site_login():
     element = driver.find_element_by_name('oPassword')
     element.send_keys('***')
 
-    click_text("Sign In", "Continue")
+    click(find_text("Sign In"), find_text("Continue"))
     return_to_classes()
 
 
 def return_to_classes():
     driver.refresh()
     sleep(.2)
-    click_text("Continue", "Make a Booking")
-    click_text("Make a Booking", "Book a Class")
-    click_text("Book a Class", "Select a time to book")
+    click(find_text("Continue"), find_text("Make a Booking"))
+    click(find_text("Make a Booking"), find_text("Book a Class"))
+    click(find_text("Book a Class"), find_text("Select a time to book"))
 
-    # this is the home b
-    # data-serveronclick="back-click"
+
+def get_classes(day):
+    path = find_attribute('class', 'Diaryslots ')
+    days = driver.find_elements_by_xpath(path)
+    classes = days[day].find_elements_by_tag_name('td')
+    class_list = []
+    for c in classes:
+        time_class = c.text.split('\n')
+        class_list.append((time_class[0], time_class[1]))
+    return class_list
 
 
 # for individual testing of this module
 if __name__ == "__main__":
-    # app.logger.addHandler(logging.StreamHandler(sys.stdout))
     app.logger.setLevel(logging.INFO)
     site_login()
-
+    cl = get_classes(1)
+    for c in cl:
+        app.logger.info(c)
