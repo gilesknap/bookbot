@@ -62,7 +62,7 @@ def site_login():
     global driver
     global driver_wait
     options = ChromeOptions()
-    options.headless = True
+    # options.headless = True
     driver = webdriver.Chrome(CHROME_DRIVER_PATH,
                               options=options)
     driver_wait = WebDriverWait(driver, 2)
@@ -97,10 +97,24 @@ def get_classes(day):
     return class_list
 
 
+def book_class(day, time, name):
+    search = '{}\n{}'.format(time, name)
+    day_path = find_attribute('class', 'Diaryslots ')
+    day_elem = driver.find_elements_by_xpath(day_path)[day]
+    class_path = '//div[starts-with(text(),"{}")]'.format(time)
+    found_class = day_elem.find_element_by_xpath(class_path)
+    app.logger.info('found class %s', found_class.text)
+    found_class.click()
+
+
 # for individual testing of this module
 if __name__ == "__main__":
     app.logger.setLevel(logging.INFO)
     site_login()
-    cl = get_classes(1)
+    cl = get_classes(6)
     for c in cl:
         app.logger.info(c)
+
+    t = '9.00am to 9.45am'
+    c = 'Spin'
+    book_class(6, t, c)
