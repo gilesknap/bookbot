@@ -16,18 +16,19 @@ app = Flask(__name__)
 CHROME_DRIVER_PATH = 'chromedriver'
 SITE_URL = 'https://indma01.clubwise.com/caversham/index.html'
 driver: webdriver = None
-actions = None
+driver_wait = None
 
 
 def click_element(path):
     result = True
-    sleep(.2)
     try:
+        driver_wait.until(EC.presence_of_element_located((By.XPATH, path)))
         element = driver.find_element_by_xpath(path)
-        if element:
-            actions.move_to_element(element).move_by_offset(
-                0, 0).click().perform()
-    except (WebDriverException, StaleElementReferenceException) as e:
+        driver_actions = ActionChains(driver)
+        driver_actions.move_to_element(element).move_by_offset(
+            0, 0).click().perform()
+    except (WebDriverException, StaleElementReferenceException,
+            TimeoutError) as e:
         app.logger.error("click fail %s", e)
         result = False
     return result
@@ -38,14 +39,14 @@ def click(path, check_text, retries: int = 5):
     repeat = 0
     while repeat < retries:
         if click_element(path):
-            wait = WebDriverWait(driver, 2)
             try:
-                wait.until(
+                driver_wait.until(
                     EC.presence_of_element_located(
                         (By.XPATH, check_path)))
                 break
             except TimeoutException:
                 app.logger.warning("retrying {}".format(path))
+        sleep(.2)
         repeat += 1
     if retries == repeat:
         raise RuntimeError('Click on {} failed to find {}', path, check_path)
@@ -62,12 +63,12 @@ def click_text(text: str, check_text: str, tag: str = '*', retries: int = 5):
 
 def site_login():
     global driver
-    global actions
+    global driver_wait
     options = ChromeOptions()
     # options.headless = True
     driver = webdriver.Chrome(CHROME_DRIVER_PATH,
-                          options=options)
-    actions = ActionChains(driver)
+                              options=options)
+    driver_wait = WebDriverWait(driver, 2)
     driver.implicitly_wait(2)
     driver.get(SITE_URL)
 
@@ -77,10 +78,12 @@ def site_login():
     element.send_keys('***')
 
     click_text("Sign In", "Continue")
+    return_to_classes()
 
 
 def return_to_classes():
-    # driver.refresh()
+    driver.refresh()
+    sleep(.2)
     click_text("Continue", "Make a Booking")
     click_text("Make a Booking", "Book a Class")
     click_text("Book a Class", "Select a time to book")
@@ -95,4 +98,3 @@ if __name__ == "__main__":
     app.logger.setLevel(logging.INFO)
     site_login()
 
-    return_to_classes()
