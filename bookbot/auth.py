@@ -11,7 +11,7 @@ from bookbot.db import get_db
 from bookbot.caversham import site_login, return_to_classes, set_cookies, \
     site_logged_in
 
-app = Flask(__name__)
+app = Flask('bookbot')
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
 

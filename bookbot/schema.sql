@@ -16,7 +16,7 @@ CREATE TABLE bookings (
   created TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   title TEXT NOT NULL,
   day TEXT NOT NULL,
-  time TEXT NOT NULL,
+  times TEXT NOT NULL,
   instructor TEXT NOT NULL,
   enabled INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES user (id)

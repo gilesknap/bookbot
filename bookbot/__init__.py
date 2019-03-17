@@ -1,6 +1,10 @@
+from enum import IntEnum
 import os
 
 from flask import Flask
+
+Weekdays = IntEnum('Weekdays', 'Monday Tuesday Wednesday '
+                               'Thursday Friday Saturday Sunday')
 
 
 def create_app(test_config=None):
@@ -30,6 +34,10 @@ def create_app(test_config=None):
     def hello():
         return 'Hello, World!'
 
+    @app.template_filter()
+    def get_day_string(day) -> str:
+        return Weekdays(int(day)+1).name
+
     # register the database commands
     from bookbot import db
     db.init_app(app)
@@ -39,10 +47,6 @@ def create_app(test_config=None):
     app.register_blueprint(auth.bp)
     app.register_blueprint(bookbot.bp)
 
-    # make url_for('index') == url_for('book.index')
-    # in another app, you might define a separate main index here with
-    # app.route, while giving the book blueprint a url_prefix, but for
-    # the tutorial the book will be the main index
     app.add_url_rule('/', endpoint='index')
 
     return app

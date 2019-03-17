@@ -1,7 +1,6 @@
 from time import sleep
 import logging
 from collections import namedtuple
-from enum import IntEnum
 from flask import Flask
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions, ActionChains
@@ -12,7 +11,7 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-app = Flask(__name__)
+app = Flask('bookbot')
 
 # todo this module needs to be a class?
 
@@ -23,9 +22,7 @@ driver_wait = None
 cookie_file = None
 
 ClassInfo = namedtuple(
-    'ClassSession', ['time', 'title', 'instructor', 'element', 'index'])
-
-Weekdays = IntEnum('Weekdays', 'sun mon tue wed thu fri sat', start=0)
+    'ClassInfo', ['day', 'times', 'title', 'instructor', 'element', 'index'])
 
 
 def click_element(path):
@@ -75,7 +72,7 @@ def setup_browser():
     if not driver:
         app.logger.debug("setup_browser - making new driver")
         options = ChromeOptions()
-        # options.headless = True
+        options.headless = True
         driver = webdriver.Chrome(CHROME_DRIVER_PATH,
                                   options=options)
         driver_wait = WebDriverWait(driver, 2)
@@ -130,11 +127,12 @@ def return_to_classes():
         click(find_text("Book a Class"), find_text("Select a time to book"))
 
 
-def element_to_class_info(element, index):
+def element_to_class_info(element, day, index):
     class_parts = element.text.split('\n')
     instructor = class_parts[len(class_parts) - 1]
     class_info = ClassInfo(
-        time=class_parts[0],
+        day=day,
+        times=class_parts[0],
         title=class_parts[1],
         instructor=instructor,
         element=None,
@@ -151,7 +149,7 @@ def get_classes(day):
     class_list = []
     for idx, class_element in enumerate(classes):
         # convert to dict for serialization
-        class_info = element_to_class_info(class_element, idx)._asdict()
+        class_info = element_to_class_info(class_element, day, idx)._asdict()
         class_list.append(class_info)
     return class_list
 

@@ -7,12 +7,12 @@ with io.open('README.rst', 'rt', encoding='utf8') as f:
 
 setup(
     name='bookbot',
-    version='1.0.0',
-    url='http://flask.pocoo.org/docs/tutorial/',
-    license='BSD',
-    maintainer='Pallets team',
-    maintainer_email='contact@palletsprojects.com',
-    description='The basic book app built in the Flask tutorial.',
+    version='0.0.1',
+    url='https://github.com/gilesknap/bookbot/',
+    license='Apache 2.0',
+    maintainer='Giles Knap',
+    maintainer_email='gilesknap@gmail.com',
+    description='The basic booking app for Caversham fitness',
     long_description=readme,
     packages=find_packages(),
     include_package_data=True,
