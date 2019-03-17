@@ -14,10 +14,13 @@ from selenium.webdriver.support import expected_conditions as ec
 
 app = Flask(__name__)
 
+# todo this module needs to be a class?
+
 CHROME_DRIVER_PATH = 'chromedriver'
 SITE_URL = 'https://indma01.clubwise.com/caversham/index.html'
 driver: webdriver = None
 driver_wait = None
+cookie_file = None
 
 ClassInfo = namedtuple('ClassSession',
                        ['time', 'title', 'instructor', 'element'])
@@ -65,32 +68,53 @@ def find_attribute(attribute: str, value: str):
     return '//*[@{0}="{1}"]'.format(attribute, value)
 
 
-def site_login(name, password):
+def setup_browser():
     global driver
     global driver_wait
-    options = ChromeOptions()
-    options.headless = True
-    driver = webdriver.Chrome(CHROME_DRIVER_PATH,
-                              options=options)
-    driver_wait = WebDriverWait(driver, 2)
-    driver.implicitly_wait(2)
-    driver.get(SITE_URL)
+    global cookie_file
+    if not driver:
+        options = ChromeOptions()
+        # options.headless = True
+        driver = webdriver.Chrome(CHROME_DRIVER_PATH,
+                                  options=options)
+        driver_wait = WebDriverWait(driver, 2)
+        driver.implicitly_wait(.2)
+        driver.get(SITE_URL)
 
-    element = driver.find_element_by_name('oLoginName')
-    element.send_keys(name)
-    element = driver.find_element_by_name('oPassword')
-    element.send_keys(password)
 
-    click(find_text("Sign In"), find_text("Continue"))
-    return_to_classes()
+def set_cookies(cookies: str):
+    setup_browser()
+    for cookie in cookies:
+        driver.add_cookie(cookie)
+
+
+def site_ready():
+    return not driver.find_elements_by_xpath(
+        find_text("Select a time to book"))
+
+
+def site_login(name, password):
+    setup_browser()
+    if not site_ready():
+        if not driver.find_elements_by_xpath(find_text('Continue')):
+            element = driver.find_element_by_name('oLoginName')
+            element.send_keys(name)
+            element = driver.find_element_by_name('oPassword')
+            element.send_keys(password)
+
+        click(find_text("Sign In"), find_text("Continue"))
+        return_to_classes()
+    return driver.get_cookies()
 
 
 def return_to_classes():
-    driver.refresh()
-    sleep(.2)
-    click(find_text("Continue"), find_text("Make a Booking"))
-    click(find_text("Make a Booking"), find_text("Book a Class"))
-    click(find_text("Book a Class"), find_text("Select a time to book"))
+    setup_browser()
+    if not site_ready():
+        driver.refresh()
+        sleep(.2)
+        click(find_text("Continue"), find_text("Make a Booking"))
+        click(find_text("Make a Booking"), find_text("Book a Class"))
+        click(find_text("Book a Class"), find_text("Select a time to book"))
 
 
 def element_to_class_info(element):

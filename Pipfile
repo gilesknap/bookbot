@@ -8,6 +8,7 @@ selenium = "*"
 flask = "*"
 requests = "*"
 beautifulsoup4 = "*"
+appdirs = "*"
 
 [dev-packages]
 mock = "*"

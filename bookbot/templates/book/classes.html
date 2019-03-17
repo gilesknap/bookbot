@@ -4,7 +4,7 @@
     <h1>{% block title %}Select a Booking{% endblock %}</h1>
     <h2>
         <!-- todo generate this rather than repeat! -->
-        <a class="action"
+        <a id='day0' class="action"
            href="{{ url_for('book.classes', day=0) }}">Monday</a>
         <a class="action"
            href="{{ url_for('book.classes', day=1) }}">Tuesday</a>
@@ -16,7 +16,7 @@
            href="{{ url_for('book.classes', day=4) }}">Friday</a>
         <a class="action"
            href="{{ url_for('book.classes', day=5) }}">Saturday</a>
-        <a class="action"
+        <a id='day6' class="action"
            href="{{ url_for('book.classes', day=6) }}">Sunday</a>
     </h2>
 {% endblock %}

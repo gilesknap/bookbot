@@ -6,7 +6,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from bookbot.db import get_db
-from bookbot.caversham import site_login
+from bookbot.caversham import site_login, return_to_classes, set_cookies
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
 
@@ -35,6 +35,12 @@ def load_logged_in_user():
         g.user = get_db().execute(
             'SELECT * FROM user WHERE id = ?', (user_id,)
         ).fetchone()
+        cav_cookies = session.get('cav_cookies')
+        if cav_cookies:
+            # todo I think this gets called for every request that requires
+            #  login - need to keep this in mind for return_to_classes
+            set_cookies(cav_cookies)
+            return_to_classes()
 
 
 @bp.route('/register', methods=('GET', 'POST'))
@@ -78,6 +84,7 @@ def register():
 def login():
     """Log in a registered user by adding the user id to the session."""
     if request.method == 'POST':
+        cookies = None
         username = request.form['username']
         password = request.form['password']
         db = get_db()
@@ -91,12 +98,17 @@ def login():
         elif not check_password_hash(user['password'], password):
             error = 'Incorrect password.'
         else:
-            error = site_login(username, password)
+            cookies = site_login(username, password)
+            if cookies:
+                error = None
+            else:
+                error = 'failed login to caversham'
 
         if error is None:
             # store the user id in a new session and return to the index
             session.clear()
             session['user_id'] = user['id']
+            session['cav_cookies'] = cookies
             return redirect(url_for('index'))
 
         flash(error)
