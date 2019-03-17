@@ -1,14 +1,21 @@
 import functools
 
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, session, url_for
+    Blueprint, flash, g, redirect, render_template, request, session, url_for,
+    Flask
 )
 from werkzeug.security import check_password_hash, generate_password_hash
+import logging
 
 from bookbot.db import get_db
-from bookbot.caversham import site_login, return_to_classes, set_cookies
+from bookbot.caversham import site_login, return_to_classes, set_cookies, \
+    site_logged_in
 
+app = Flask(__name__)
 bp = Blueprint('auth', __name__, url_prefix='/auth')
+
+
+app.logger.setLevel(logging.DEBUG)
 
 
 def login_required(view):
@@ -29,7 +36,10 @@ def load_logged_in_user():
     the database into ``g.user``."""
     user_id = session.get('user_id')
 
+    app.logger.debug("load_logged_in_user()")
+
     if user_id is None:
+        app.logger.debug("load_logged_in_user() - no user_id")
         g.user = None
     else:
         g.user = get_db().execute(
@@ -40,7 +50,13 @@ def load_logged_in_user():
             # todo I think this gets called for every request that requires
             #  login - need to keep this in mind for return_to_classes
             set_cookies(cav_cookies)
-            return_to_classes()
+            if site_logged_in():
+                return_to_classes()
+            else:
+                # force authentication so we can get password and login to
+                # Caversham
+                app.logger.debug("load_logged_in_user() - reloading Caversham")
+                g.user = None
 
 
 @bp.route('/register', methods=('GET', 'POST'))
@@ -109,6 +125,7 @@ def login():
             session.clear()
             session['user_id'] = user['id']
             session['cav_cookies'] = cookies
+            session.permanent = True
             return redirect(url_for('index'))
 
         flash(error)

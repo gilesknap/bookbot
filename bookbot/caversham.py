@@ -43,7 +43,7 @@ def click_element(path):
     return result
 
 
-def click(path, check_path, retries: int = 5):
+def click(path, check_path, retries: int = 8):
     repeat = 0
     while repeat < retries:
         if click_element(path):
@@ -73,6 +73,7 @@ def setup_browser():
     global driver_wait
     global cookie_file
     if not driver:
+        app.logger.debug("setup_browser - making new driver")
         options = ChromeOptions()
         # options.headless = True
         driver = webdriver.Chrome(CHROME_DRIVER_PATH,
@@ -88,15 +89,26 @@ def set_cookies(cookies: str):
         driver.add_cookie(cookie)
 
 
+def site_logged_in():
+    result = driver.find_elements_by_xpath(
+        find_text("Sign In")) == []
+    app.logger.debug("site_logged_in() returning %s", result)
+    return result
+
+
 def site_ready():
-    return not driver.find_elements_by_xpath(
-        find_text("Select a time to book"))
+    result = driver.find_elements_by_xpath(
+        find_text("Select a time to book")) != []
+    app.logger.debug("site_ready() returning %s", result)
+    return result
 
 
 def site_login(name, password):
+    app.logger.debug("site_login(name=%s)", name)
     setup_browser()
-    if not site_ready():
+    if not site_logged_in():
         if not driver.find_elements_by_xpath(find_text('Continue')):
+            app.logger.debug("site_login() authenticating ...")
             element = driver.find_element_by_name('oLoginName')
             element.send_keys(name)
             element = driver.find_element_by_name('oPassword')
@@ -108,6 +120,7 @@ def site_login(name, password):
 
 
 def return_to_classes():
+    app.logger.debug("return_to_classes()")
     setup_browser()
     if not site_ready():
         driver.refresh()
@@ -130,6 +143,7 @@ def element_to_class_info(element):
 
 
 def get_classes(day):
+    app.logger.debug("get_classes(day=%d)", day)
     path = find_attribute('class', 'Diaryslots ')
     days = driver.find_elements_by_xpath(path)
     classes = days[day].find_elements_by_tag_name('td')
@@ -141,6 +155,8 @@ def get_classes(day):
 
 
 def book_class(day, time, title):
+    app.logger.debug("book_class(day=%d, time=%s, title=%s)",
+                     day, time, title)
     classes = get_classes(day)
     for a_class in classes:
         if a_class.time == time and a_class.title == title:

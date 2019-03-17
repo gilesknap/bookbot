@@ -10,7 +10,8 @@ from .caversham import get_classes, Weekdays
 app = Flask(__name__)
 bp = Blueprint('book', __name__)
 
-app.logger.setLevel(logging.INFO)
+app.logger.setLevel(logging.DEBUG)
+
 
 @bp.route('/')
 def index():
