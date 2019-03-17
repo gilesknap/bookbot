@@ -5,33 +5,30 @@ from werkzeug.exceptions import abort
 from .auth import login_required
 from .db import get_db
 import logging
+from .caversham import get_classes, Weekdays
 
 app = Flask(__name__)
-bp = Blueprint('blog', __name__)
+bp = Blueprint('book', __name__)
 
 app.logger.setLevel(logging.INFO)
 
 @bp.route('/')
 def index():
-    """Show all the posts, most recent first."""
+    """Show currently selected list of exercise classes"""
     db = get_db()
-    posts = db.execute(
-        'SELECT p.id, title, body, created, author_id, username'
-        ' FROM post p JOIN user u ON p.author_id = u.id'
-        ' ORDER BY created DESC'
+    bookings = db.execute(
+        'SELECT id, time, title, instructor'
+        ' FROM bookings ORDER BY created DESC'
     ).fetchall()
-    return render_template('blog/index.html', posts=posts)
+    return render_template('book/index.html', bookings=bookings)
 
 
-def get_post(id, check_author=True):
-    """Get a post and its author by id.
+def toggle_booking(id, enabled):
+    """enable / disable on of the saved booking schedules
 
-    Checks that the id exists and optionally that the current user is
-    the author.
-
-    :param id: id of post to get
-    :param check_author: require the current user to be the author
-    :return: the post with author information
+    # TODO
+    :param id: id of the booking
+    :param enabled: current state
     :raise 404: if a post with the given id doesn't exist
     :raise 403: if the current user isn't the author
     """
@@ -51,11 +48,22 @@ def get_post(id, check_author=True):
     return post
 
 
-@bp.route('/classes', methods=('GET',))
+@bp.route('/<int:new_class>/add_class', methods=('POST',))
 @login_required
-def classes():
+def add_to_index(new_class):
+    # todo need to work out how to link int to a ClassInfo
+    pass
 
-    """List all available classes."""
+
+@bp.route('/<int:day>/classes', methods=('GET',))
+@login_required
+def classes(day: Weekdays):
+    """List all available classes for a given day of the week"""
+
+    g.day = day
+    classes = get_classes(g.day)
+
+    return render_template('book/classes.html', classes=classes)
     # if request.method == 'POST':
     #     title = request.form['title']
     #     body = request.form['body']
@@ -74,9 +82,7 @@ def classes():
     #             (title, body, g.user['id'])
     #         )
     #         db.commit()
-    #         return redirect(url_for('blog.index'))
-
-    return render_template('blog/classes.html')
+    #         return redirect(url_for('book.index'))
 
 
 @bp.route('/<int:id>/update', methods=('GET', 'POST'))
@@ -102,9 +108,9 @@ def update(id):
                 (title, body, id)
             )
             db.commit()
-            return redirect(url_for('blog.index'))
+            return redirect(url_for('book.index'))
 
-    return render_template('blog/update.html', post=post)
+    return render_template('book/add_class.html', post=post)
 
 
 @bp.route('/<int:id>/delete', methods=('POST',))
@@ -119,4 +125,4 @@ def delete(id):
     db = get_db()
     db.execute('DELETE FROM post WHERE id = ?', (id,))
     db.commit()
-    return redirect(url_for('blog.index'))
+    return redirect(url_for('book.index'))

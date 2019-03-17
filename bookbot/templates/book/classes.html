@@ -1,0 +1,45 @@
+{% extends 'base.html' %}
+
+{% block header %}
+    <h1>{% block title %}Select a Booking{% endblock %}</h1>
+    <h2>
+        <!-- todo generate this rather than repeat! -->
+        <a class="action"
+           href="{{ url_for('book.classes', day=0) }}">Monday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=1) }}">Tuesday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=2) }}">Wednesday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=3) }}">Thursday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=4) }}">Friday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=5) }}">Saturday</a>
+        <a class="action"
+           href="{{ url_for('book.classes', day=6) }}">Sunday</a>
+    </h2>
+{% endblock %}
+
+{% block content %}
+    <article class="class">
+        <table>
+            <th>Title</th>
+            <th>Time</th>
+            <th>Instructor</th>
+            <th>Add</th>
+            {% for class in classes %}
+                <tr>
+                    <td>{{ class['title'] }}</td>
+                    <td>{{ class['time'] }}</td>
+                    <td>{{ class['instructor'] }}</td>
+                    <td>
+                        <a class="action"
+                           href="{{ url_for('book.add_to_index', new_class=0) }}">select
+                            this class</a>
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </article>
+{% endblock %}

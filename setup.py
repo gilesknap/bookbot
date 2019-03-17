@@ -12,7 +12,7 @@ setup(
     license='BSD',
     maintainer='Pallets team',
     maintainer_email='contact@palletsprojects.com',
-    description='The basic blog app built in the Flask tutorial.',
+    description='The basic book app built in the Flask tutorial.',
     long_description=readme,
     packages=find_packages(),
     include_package_data=True,
