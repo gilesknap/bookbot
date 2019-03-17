@@ -1,5 +1,6 @@
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for, Flask
+    Blueprint, flash, g, redirect, render_template, request, url_for, Flask,
+    session
 )
 from werkzeug.exceptions import abort
 from .auth import login_required
@@ -49,11 +50,13 @@ def toggle_booking(id, enabled):
     return post
 
 
-@bp.route('/<int:new_class>/add_class', methods=('POST',))
+@bp.route('/<int:new_class>/add_class', methods=('GET', 'POST',))
 @login_required
 def add_to_index(new_class):
-    # todo need to work out how to link int to a ClassInfo
-    pass
+    classes = session.get("classes")
+    class_info = classes[new_class]
+
+    return render_template('book/add_class.html', info=class_info)
 
 
 @bp.route('/<int:day>/classes', methods=('GET',))
@@ -63,8 +66,9 @@ def classes(day: Weekdays):
 
     g.day = day
     classes = get_classes(g.day)
+    session['classes'] = classes
 
-    return render_template('book/classes.html', classes=classes)
+    return render_template('book/classes.html', classes=classes, day=day)
     # if request.method == 'POST':
     #     title = request.form['title']
     #     body = request.form['body']

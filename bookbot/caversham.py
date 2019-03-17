@@ -22,8 +22,8 @@ driver: webdriver = None
 driver_wait = None
 cookie_file = None
 
-ClassInfo = namedtuple('ClassSession',
-                       ['time', 'title', 'instructor', 'element'])
+ClassInfo = namedtuple(
+    'ClassSession', ['time', 'title', 'instructor', 'element', 'index'])
 
 Weekdays = IntEnum('Weekdays', 'sun mon tue wed thu fri sat', start=0)
 
@@ -130,14 +130,15 @@ def return_to_classes():
         click(find_text("Book a Class"), find_text("Select a time to book"))
 
 
-def element_to_class_info(element):
+def element_to_class_info(element, index):
     class_parts = element.text.split('\n')
     instructor = class_parts[len(class_parts) - 1]
     class_info = ClassInfo(
         time=class_parts[0],
         title=class_parts[1],
         instructor=instructor,
-        element=element
+        element=None,
+        index=index
     )
     return class_info
 
@@ -148,8 +149,9 @@ def get_classes(day):
     days = driver.find_elements_by_xpath(path)
     classes = days[day].find_elements_by_tag_name('td')
     class_list = []
-    for class_element in classes:
-        class_info = element_to_class_info(class_element)
+    for idx, class_element in enumerate(classes):
+        # convert to dict for serialization
+        class_info = element_to_class_info(class_element, idx)._asdict()
         class_list.append(class_info)
     return class_list
 
