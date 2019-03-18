@@ -7,7 +7,7 @@ from flask import (
 from werkzeug.security import check_password_hash, generate_password_hash
 
 from bookbot.db import get_db
-from bookbot.caversham import site_login, return_to_classes, set_cookies, \
+from bookbot.caversham import site_login, set_cookies, \
     site_logged_in
 
 bp = Blueprint('auth', __name__, url_prefix='/auth')
@@ -42,14 +42,9 @@ def load_logged_in_user():
         ).fetchone()
         cav_cookies = session.get('cav_cookies')
         if cav_cookies:
-            # todo I think this gets called for every request that requires
-            #  login - need to keep this in mind for return_to_classes
             set_cookies(cav_cookies)
-            if site_logged_in():
-                return_to_classes()
-            else:
-                # force authentication so we can get password and login to
-                # Caversham
+            if not site_logged_in():
+                # force authentication to get password and login to Caversham
                 current_app.logger.debug(
                     "load_logged_in_user() - reloading Caversham")
                 g.user = None
@@ -133,4 +128,5 @@ def login():
 def logout():
     """Clear the current session, including the stored user id."""
     session.clear()
+    g.user = None
     return redirect(url_for('index'))
