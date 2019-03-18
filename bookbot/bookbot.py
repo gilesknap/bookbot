@@ -4,7 +4,7 @@ from flask import (
 )
 from .auth import login_required
 from .db import get_db
-from .caversham import get_classes, ClassInfo
+from .caversham import get_classes, ClassInfo, book_class
 
 bp = Blueprint('book', __name__)
 
@@ -64,6 +64,14 @@ def toggle_booking(class_id, enabled):
         (enabled, class_id)
     )
     db.commit()
+
+    if enabled:
+        c = db.execute(
+                'SELECT day, times, title'
+                ' FROM bookings WHERE id = ?'
+                ' ORDER BY created DESC', (class_id, )
+            ).fetchone()
+        book_class(int(c['day']), c['times'], c['title'])
     return redirect(url_for('book.index'))
 
 

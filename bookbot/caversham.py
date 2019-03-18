@@ -84,7 +84,7 @@ def setup_browser(restart=False):
     if not driver or restart:
         current_app.logger.debug("setup_browser - making new driver")
         options = ChromeOptions()
-        options.headless = True
+        # options.headless = True
         driver = webdriver.Chrome(CHROME_DRIVER_PATH,
                                   options=options)
         driver_wait = WebDriverWait(driver, 2)
@@ -132,7 +132,7 @@ def site_login(name, password):
     return driver.get_cookies()
 
 
-def element_to_class_info(element, day, index, serializable=False):
+def element_to_class_info(element, day, index, serializable):
     class_parts = element.text.split('\n')
     instructor = class_parts[len(class_parts) - 1]
     class_info = ClassInfo(
@@ -158,17 +158,17 @@ def get_classes(day, serializable=True):
             class_info = element_to_class_info(
                 class_element, day, idx, True)._asdict()
         else:
-            class_info = element_to_class_info(class_element, day, idx)
+            class_info = element_to_class_info(class_element, day, idx, False)
         class_list.append(class_info)
     return class_list
 
 
-def book_class(day, time, title):
+def book_class(day, times, title):
     current_app.logger.debug("book_class(day=%d, time=%s, title=%s)",
-                             day, time, title)
-    classes: ClassInfo = get_classes(day, True)
+                             day, times, title)
+    classes: ClassInfo = get_classes(day, False)
     for a_class in classes:
-        if a_class.times == time and a_class.title == title:
+        if a_class.times == times and a_class.title == title:
             current_app.logger.info('found class %s', a_class.element.text)
             a_class.element.click()
             # Todo click on confirm and verify success
