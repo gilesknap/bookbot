@@ -3,8 +3,9 @@ import os
 
 from flask import Flask
 
-Weekdays = IntEnum('Weekdays', 'Monday Tuesday Wednesday '
-                               'Thursday Friday Saturday Sunday')
+# noinspection PyTypeChecker
+Weekdays = IntEnum(
+    'Weekdays', 'Monday Tuesday Wednesday Thursday Friday Saturday Sunday')
 
 
 def create_app(test_config=None):
@@ -36,6 +37,7 @@ def create_app(test_config=None):
 
     @app.template_filter()
     def get_day_string(day) -> str:
+        # noinspection PyCallingNonCallable
         return Weekdays(int(day)+1).name
 
     # register the database commands

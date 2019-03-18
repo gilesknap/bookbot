@@ -1,26 +1,17 @@
-from enum import IntEnum
+from bookbot import Weekdays
 from flask import (
-    Blueprint, flash, g, redirect, render_template, request, url_for, Flask,
-    session
+    Blueprint, g, redirect, render_template, url_for, session
 )
-from werkzeug.exceptions import abort
 from .auth import login_required
 from .db import get_db
-import logging
 from .caversham import get_classes, ClassInfo
 
-app = Flask('bookbot')
 bp = Blueprint('book', __name__)
-
-app.logger.setLevel(logging.DEBUG)
-
-
-Weekdays = IntEnum('Weekdays', 'sun mon tue wed thu fri sat', start=0)
 
 
 @bp.route('/')
 def index():
-    bookings = None
+    bookings = []
     db = get_db()
     if g.user and g.user['id']:
         bookings = db.execute(

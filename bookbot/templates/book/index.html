@@ -20,11 +20,11 @@
                                 at {{ booking['times'] }}
                                 {{ booking['instructor'] }}
                             </div>
-                            <div {{ 'style=color:green' if booking['enabled']
+                            Auto Booking:
+                            <a {{ 'style=color:green' if booking['enabled']
                             else 'style=color:red' }}>
-                                Auto Booking:
                                 {{ 'On' if booking['enabled'] else 'Off' }}
-                            </div>
+                            </a>
                         </td>
                         <td align="right">
                             <a class="action"

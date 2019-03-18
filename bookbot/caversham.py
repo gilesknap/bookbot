@@ -1,7 +1,7 @@
 from time import sleep
-import logging
+import atexit
 from collections import namedtuple
-from flask import Flask
+from flask import current_app
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions, ActionChains
 from selenium.common.exceptions import (WebDriverException,
@@ -11,10 +11,6 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
 
-app = Flask('bookbot')
-
-# todo this module needs to be a class?
-
 CHROME_DRIVER_PATH = 'chromedriver'
 SITE_URL = 'https://indma01.clubwise.com/caversham/index.html'
 driver: webdriver = None
@@ -23,6 +19,14 @@ cookie_file = None
 
 ClassInfo = namedtuple(
     'ClassInfo', ['day', 'times', 'title', 'instructor', 'element', 'index'])
+
+
+def cleanup():
+    global driver
+    driver.close()
+
+
+atexit.register(cleanup)
 
 
 def click_element(path):
@@ -35,7 +39,8 @@ def click_element(path):
             0, 0).click().perform()
     except (WebDriverException, StaleElementReferenceException,
             TimeoutError) as e:
-        app.logger.error("click fail %s", e)
+        current_app.logger.error("click fail")
+        current_app.logger.log_exception(e)
         result = False
     return result
 
@@ -50,7 +55,7 @@ def click(path, check_path, retries: int = 8):
                         (By.XPATH, check_path)))
                 break
             except TimeoutException:
-                app.logger.warning("retrying {}".format(path))
+                current_app.logger.warning("retrying {}".format(path))
         sleep(.2)
         repeat += 1
     if retries == repeat:
@@ -70,9 +75,9 @@ def setup_browser():
     global driver_wait
     global cookie_file
     if not driver:
-        app.logger.debug("setup_browser - making new driver")
+        current_app.logger.debug("setup_browser - making new driver")
         options = ChromeOptions()
-        options.headless = True
+        # options.headless = True
         driver = webdriver.Chrome(CHROME_DRIVER_PATH,
                                   options=options)
         driver_wait = WebDriverWait(driver, 2)
@@ -89,23 +94,23 @@ def set_cookies(cookies: str):
 def site_logged_in():
     result = driver.find_elements_by_xpath(
         find_text("Sign In")) == []
-    app.logger.debug("site_logged_in() returning %s", result)
+    current_app.logger.debug("site_logged_in() returning %s", result)
     return result
 
 
 def site_ready():
     result = driver.find_elements_by_xpath(
         find_text("Select a time to book")) != []
-    app.logger.debug("site_ready() returning %s", result)
+    current_app.logger.debug("site_ready() returning %s", result)
     return result
 
 
 def site_login(name, password):
-    app.logger.debug("site_login(name=%s)", name)
+    current_app.logger.debug("site_login(name=%s)", name)
     setup_browser()
     if not site_logged_in():
         if not driver.find_elements_by_xpath(find_text('Continue')):
-            app.logger.debug("site_login() authenticating ...")
+            current_app.logger.debug("site_login() authenticating ...")
             element = driver.find_element_by_name('oLoginName')
             element.send_keys(name)
             element = driver.find_element_by_name('oPassword')
@@ -117,7 +122,7 @@ def site_login(name, password):
 
 
 def return_to_classes():
-    app.logger.debug("return_to_classes()")
+    current_app.logger.debug("return_to_classes()")
     setup_browser()
     if not site_ready():
         driver.refresh()
@@ -142,7 +147,7 @@ def element_to_class_info(element, day, index):
 
 
 def get_classes(day):
-    app.logger.debug("get_classes(day=%d)", day)
+    current_app.logger.debug("get_classes(day=%d)", day)
     path = find_attribute('class', 'Diaryslots ')
     days = driver.find_elements_by_xpath(path)
     classes = days[day].find_elements_by_tag_name('td')
@@ -155,26 +160,13 @@ def get_classes(day):
 
 
 def book_class(day, time, title):
-    app.logger.debug("book_class(day=%d, time=%s, title=%s)",
-                     day, time, title)
-    classes = get_classes(day)
+    current_app.logger.debug("book_class(day=%d, time=%s, title=%s)",
+                             day, time, title)
+    classes: ClassInfo = get_classes(day)
     for a_class in classes:
-        if a_class.time == time and a_class.title == title:
-            app.logger.info('found class %s', a_class.element.text)
+        if a_class.times == time and a_class.title == title:
+            current_app.logger.info('found class %s', a_class.element.text)
             a_class.element.click()
             # Todo click on confirm and verify success
             return True
     return False
-
-
-# for individual testing of this module
-if __name__ == "__main__":
-    app.logger.setLevel(logging.INFO)
-    site_login()
-    cl = get_classes(6)
-    for c in cl:
-        app.logger.info(c)
-
-    t = '9.00am to 9.45am'
-    c = 'Spin'
-    book_class(6, t, c)
