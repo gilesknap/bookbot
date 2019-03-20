@@ -19,5 +19,6 @@ CREATE TABLE bookings (
   times TEXT NOT NULL,
   instructor TEXT NOT NULL,
   enabled INTEGER NOT NULL,
+  booked INTEGER NOT NULL,
   FOREIGN KEY (user_id) REFERENCES user (id)
 );

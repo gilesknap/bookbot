@@ -1,7 +1,7 @@
 from time import sleep
 import atexit
 from collections import namedtuple
-from flask import current_app
+from flask import current_app, flash
 from selenium import webdriver
 from selenium.webdriver import ChromeOptions, ActionChains
 from selenium.common.exceptions import (WebDriverException,
@@ -10,6 +10,7 @@ from selenium.common.exceptions import (WebDriverException,
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as ec
+from typing import List
 
 CHROME_DRIVER_PATH = 'chromedriver'
 SITE_URL = 'https://indma01.clubwise.com/caversham/index.html'
@@ -49,18 +50,21 @@ def click_element(path):
     return result
 
 
-def click(path, check_path, retries: int = 8):
+def click(path: str, check_path: str = None, retries: int = 4):
     repeat = 0
     while repeat < retries:
+        sleep(.2)
         if click_element(path):
+            current_app.logger.debug("clicked %s", path)
             try:
-                driver_wait.until(
-                    ec.presence_of_element_located(
-                        (By.XPATH, check_path)))
+                if check_path:
+                    driver_wait.until(
+                        ec.presence_of_element_located(
+                            (By.XPATH, check_path)))
+                    current_app.logger.debug("found %s", path)
                 break
             except TimeoutException:
                 current_app.logger.warning("retrying {}".format(path))
-        sleep(.2)
         repeat += 1
     if retries == repeat:
         raise RuntimeError(
@@ -108,6 +112,13 @@ def site_logged_in():
     return result
 
 
+def return_to_classes():
+    driver.refresh()
+    click(find_text("Continue"), find_text("Make a Booking"))
+    click(find_text("Make a Booking"), find_text("Book a Class"))
+    click(find_text("Book a Class"), find_text("Select a time to book"))
+
+
 def site_login(name, password):
     try:
         current_app.logger.debug("site_login(name=%s)", name)
@@ -120,10 +131,8 @@ def site_login(name, password):
                 element = driver.find_element_by_name('oPassword')
                 element.send_keys(password)
                 click(find_text("Sign In"), find_text("Continue"))
+        return_to_classes()
 
-            click(find_text("Continue"), find_text("Make a Booking"))
-            click(find_text("Make a Booking"), find_text("Book a Class"))
-            click(find_text("Book a Class"), find_text("Select a time to book"))
     except WebDriverException as e:
         # clear out the driver so we can retry
         current_app.log_exception(e)
@@ -163,14 +172,48 @@ def get_classes(day, serializable=True):
     return class_list
 
 
+def which_result(paths: List[str], retries=2):
+    x_paths = [find_text(path) for path in paths]
+    for retry in range(retries):
+        for i, path in enumerate(x_paths):
+            if driver.find_elements_by_xpath(path):
+                return i
+    return None
+
+
 def book_class(day, times, title):
     current_app.logger.debug("book_class(day=%d, time=%s, title=%s)",
                              day, times, title)
     classes: ClassInfo = get_classes(day, False)
+
+    result = None
+    found_class = None
     for a_class in classes:
         if a_class.times == times and a_class.title == title:
             current_app.logger.info('found class %s', a_class.element.text)
-            a_class.element.click()
-            # Todo click on confirm and verify success
-            return True
-    return False
+            found_class = a_class
+
+    if found_class:
+        current_app.logger.debug("clicking booking ...")
+        found_class.element.click()
+        current_app.logger.debug("confirming booking ...")
+        sleep(1)
+        click(find_text('Confirm'), find_text('Booking Confirmed'))
+        current_app.logger.debug("awaiting booking confirmation ...")
+
+        answers = [
+            'Booking Confirmed',
+            'You are already booked for this class and time.',
+            'Sorry we are only able to book this activity up to'
+            ' 2 days in advance'
+        ]
+        result = which_result(answers)
+
+        if result is not None:
+            flash(answers[result])
+        else:
+            flash("booking failed.")
+
+    return_to_classes()
+    return result == 0
+

@@ -25,6 +25,12 @@
                             else 'style=color:red' }}>
                                 {{ 'On' if booking['enabled'] else 'Off' }}
                             </a>
+                            <div> Currently Booked:
+                                <a {{ 'style=color:green' if booking['booked']
+                            else 'style=color:red' }}>
+                                    {{ 'Yes' if booking['booked'] else 'No' }}
+                                </a>
+                            </div>
                         </td>
                         <td align="right">
                             <a class="action"

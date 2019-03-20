@@ -31,13 +31,13 @@ def add_to_index(new_class):
     db = get_db()
     db.execute(
                 'INSERT INTO bookings (user_id, title, day, times, '
-                'instructor, enabled) VALUES (?,?,?,?,?,?)',
+                'instructor, enabled, booked) VALUES (?,?,?,?,?,?,?)',
                 (g.user['id'],
                  class_info.title,
                  class_info.day,
                  class_info.times,
                  class_info.instructor,
-                 True)
+                 True, False)
             )
     db.commit()
     return redirect(url_for('book.index'))
@@ -71,7 +71,12 @@ def toggle_booking(class_id, enabled):
                 ' FROM bookings WHERE id = ?'
                 ' ORDER BY created DESC', (class_id, )
             ).fetchone()
-        book_class(int(c['day']), c['times'], c['title'])
+        if book_class(int(c['day']), c['times'], c['title']):
+            db.execute(
+                'UPDATE bookings SET booked = ? WHERE id = ?',
+                (True, class_id)
+            )
+            db.commit()
     return redirect(url_for('book.index'))
 
 

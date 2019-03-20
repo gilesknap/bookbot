@@ -1,0 +1,7 @@
+- scheduler
+    - includes flipping to next page in calendar for Mon/Tues bookings
+    - includes some kind of (secure) password caching
+- run as a service at home (on raspberry pi?)
+- host in the cloud - Heroku or Google App
+- emailing results
+- insert into a calendar?
